@@ -45,6 +45,9 @@ source "amazon-ebs" "child-east" {
   instance_type  = "t2.small"
   ssh_username   = "ubuntu"
   ssh_agent_auth = false
+  tags = {
+    Name = "learn-revocation-child"
+  }
 }
 
 source "amazon-ebs" "child-west" {
@@ -54,6 +57,9 @@ source "amazon-ebs" "child-west" {
   instance_type  = "t2.small"
   ssh_username   = "ubuntu"
   ssh_agent_auth = false
+  tags = {
+    Name = "learn-revocation-child"
+  }
 }
 
 

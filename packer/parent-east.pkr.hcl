@@ -14,6 +14,9 @@ source "amazon-ebs" "east" {
   instance_type  = "t2.small"
   ssh_username   = "ubuntu"
   ssh_agent_auth = false
+  tags = {
+    Name = "learn-revocation-parent"
+  }
 }
 
 build {

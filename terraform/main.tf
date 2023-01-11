@@ -19,33 +19,16 @@ data "hcp_packer_iteration" "child" {
 
 # us-east-2 region resources
 
-resource "aws_vpc" "east" {
-  provider   = aws.east
-  cidr_block = "10.1.0.0/16"
-}
-resource "aws_subnet" "east1" {
-  provider   = aws.east
-  vpc_id     = aws_vpc.east.id
-  cidr_block = "10.1.1.0/24"
-}
-resource "aws_subnet" "east2" {
-  provider   = aws.east
-  vpc_id     = aws_vpc.east.id
-  cidr_block = "10.1.2.0/24"
-}
-
-resource "aws_security_group" "east_egress" {
-  provider = aws.east
-  name     = "allow_outbound"
-  vpc_id   = aws_vpc.east.id
-
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+module "vpc_east" {
+  source = "terraform-aws-modules/vpc/aws"
+  providers = {
+    aws = aws.east
   }
+
+  name = "${var.project}-east"
+  cidr = "10.1.0.0/16"
+  azs             = ["us-east-2a"]
+  private_subnets = ["10.1.1.0/24", "10.1.2.0/24"]
 }
 
 data "hcp_packer_image" "aws_east" {
@@ -59,42 +42,28 @@ resource "aws_instance" "east" {
   provider                    = aws.east
   ami                         = data.hcp_packer_image.aws_east.cloud_image_id
   instance_type               = "t3.micro"
-  subnet_id                   = aws_subnet.east2.id
-  vpc_security_group_ids      = [aws_security_group.east_egress.id]
+  subnet_id                   = module.vpc_east.private_subnets[0]
+  vpc_security_group_ids      = [module.vpc_east.default_security_group_id]
   associate_public_ip_address = false
 
   tags = {
     Name                   = "${var.project}-${var.aws_region_east}"
-    HCP_Packer_Iteration   = data.hcp_packer_iteration.child.id
-    HCP_Packer_Fingerprint = data.hcp_packer_iteration.child.fingerprint
   }
 }
 
 
 # us-west-2 region resources
 
-resource "aws_vpc" "west" {
-  provider   = aws.west
-  cidr_block = "10.0.0.0/16"
-}
-resource "aws_subnet" "west1" {
-  provider   = aws.west
-  vpc_id     = aws_vpc.west.id
-  cidr_block = "10.0.1.0/24"
-}
-
-resource "aws_security_group" "west_egress" {
-  provider = aws.west
-  name     = "allow_outbound"
-  vpc_id   = aws_vpc.west.id
-
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+module "vpc_west" {
+  source = "terraform-aws-modules/vpc/aws"
+  providers = {
+    aws = aws.west
   }
+
+  name = "${var.project}-west"
+  cidr = "10.2.0.0/16"
+  azs             = ["us-west-2a"]
+  private_subnets = ["10.2.1.0/24", "10.2.2.0/24"]
 }
 
 data "hcp_packer_image" "aws_west" {
@@ -109,14 +78,12 @@ resource "aws_instance" "west" {
   provider                    = aws.west
   ami                         = data.hcp_packer_image.aws_west.cloud_image_id
   instance_type               = "t3.micro"
-  subnet_id                   = aws_subnet.west1.id
-  vpc_security_group_ids      = [aws_security_group.west_egress.id]
+  subnet_id                   = module.vpc_west.private_subnets[0]
+  vpc_security_group_ids      = [module.vpc_west.default_security_group_id]
   associate_public_ip_address = false
 
   tags = {
     Name                   = "${var.project}-${var.aws_region_west}"
-    HCP_Packer_Iteration   = data.hcp_packer_iteration.child.id
-    HCP_Packer_Fingerprint = data.hcp_packer_iteration.child.fingerprint
   }
 }
 

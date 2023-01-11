@@ -14,12 +14,6 @@ EOF
   exit 1
 fi
 
-trap_error() {
-  echo "Error"
-  exit 1
-}
-trap trap_error ERR
-
 update_channel() {
   bucket_slug=$1
   channel_name=$2
@@ -104,7 +98,4 @@ echo "SETTING CHILD CHANNEL"
 bucket_slug="learn-revocation-child"
 update_channel $bucket_slug production
 
-exit 0
-
-
-
+echo "DONE"
