@@ -1,23 +1,15 @@
-provider "aws" {
-  alias  = "west"
-  region = var.aws_region_west
-}
-provider "aws" {
-  alias  = "east"
-  region = var.aws_region_east
-}
-provider "hcp" {}
-
-locals {
-  project = "learn-revocation"
-}
-
 data "hcp_packer_iteration" "child" {
-  bucket_name = "${var.project}-child"
-  channel     = var.hcp_channel
+  bucket_name = "learn-revocation-child"
+  channel     = "production"
 }
 
 # us-east-2 region resources
+data "hcp_packer_image" "aws_east" {
+  bucket_name    = data.hcp_packer_iteration.child.bucket_name
+  iteration_id   = data.hcp_packer_iteration.child.ulid
+  cloud_provider = "aws"
+  region         = "us-east-2"
+}
 
 module "vpc_east" {
   source = "terraform-aws-modules/vpc/aws"
@@ -25,17 +17,10 @@ module "vpc_east" {
     aws = aws.east
   }
 
-  name = "${var.project}-east"
-  cidr = "10.1.0.0/16"
+  name            = "learn-revocation-east"
+  cidr            = "10.1.0.0/16"
   azs             = ["us-east-2a"]
   private_subnets = ["10.1.1.0/24", "10.1.2.0/24"]
-}
-
-data "hcp_packer_image" "aws_east" {
-  bucket_name    = data.hcp_packer_iteration.child.bucket_name
-  iteration_id   = data.hcp_packer_iteration.child.ulid
-  cloud_provider = "aws"
-  region         = var.aws_region_east
 }
 
 resource "aws_instance" "east" {
@@ -47,7 +32,7 @@ resource "aws_instance" "east" {
   associate_public_ip_address = false
 
   tags = {
-    Name                   = "${var.project}-${var.aws_region_east}"
+    Name = "learn-revocation-us-east-2"
   }
 }
 
@@ -60,8 +45,8 @@ module "vpc_west" {
     aws = aws.west
   }
 
-  name = "${var.project}-west"
-  cidr = "10.2.0.0/16"
+  name            = "learn-revocation-west"
+  cidr            = "10.2.0.0/16"
   azs             = ["us-west-2a"]
   private_subnets = ["10.2.1.0/24", "10.2.2.0/24"]
 }
@@ -71,7 +56,7 @@ data "hcp_packer_image" "aws_west" {
   iteration_id = data.hcp_packer_iteration.child.ulid
   #iteration_id = "01GKA7AA5S07F2438XPGCDJ1C6"
   cloud_provider = "aws"
-  region         = var.aws_region_west
+  region         = "us-west-2"
 }
 
 resource "aws_instance" "west" {
@@ -83,7 +68,7 @@ resource "aws_instance" "west" {
   associate_public_ip_address = false
 
   tags = {
-    Name                   = "${var.project}-${var.aws_region_west}"
+    Name = "learn-revocation-us-west-2"
   }
 }
 
