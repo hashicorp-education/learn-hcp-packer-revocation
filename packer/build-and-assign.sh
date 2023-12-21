@@ -74,7 +74,7 @@ fi
 bearer=$(echo "$response" | jq -r '.access_token')
 
 
-packer init parent-east.pkr.hcl
+packer init plugins.pkr.hcl
 
 echo "Building parent images"
 export HCP_PACKER_BUILD_FINGERPRINT=$(date +%s)
