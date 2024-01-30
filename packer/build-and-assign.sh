@@ -17,29 +17,29 @@ fi
 update_channel() {
   bucket_slug=$1
   channel_name=$2
-  base_url="https://api.cloud.hashicorp.com/packer/2021-04-30/organizations/$HCP_ORGANIZATION_ID/projects/$HCP_PROJECT_ID"
+  base_url="https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/$HCP_ORGANIZATION_ID/projects/$HCP_PROJECT_ID"
 
   response=$(curl --request GET --silent \
-    --url "$base_url/images/$bucket_slug/iterations" \
+    --url "$base_url/buckets/$bucket_slug/versions" \
     --header "authorization: Bearer $bearer")
   api_error=$(echo "$response" | jq -r '.message')
   if [ "$api_error" != null ]; then
-    # Failed to list iterations
-    echo "Failed to list iterations: $api_error"
+    # Failed to list versions
+    echo "Failed to list versions: $api_error"
     exit 1
   else
-    iteration_id=$(echo "$response" | jq -r '.iterations[0].id')
+    version_fingerprint=$(echo "$response" | jq -r '.versions[0].fingerprint')
   fi
 
   response=$(curl --request GET --silent \
-    --url "$base_url/images/$bucket_slug/channels/$channel_name" \
+    --url "$base_url/buckets/$bucket_slug/channels/$channel_name" \
     --header "authorization: Bearer $bearer")
   api_error=$(echo "$response" | jq -r '.message')
   if [ "$api_error" != null ]; then
     # Channel likely doesn't exist, create it
     api_error=$(curl --request POST --silent \
-      --url "$base_url/images/$bucket_slug/channels" \
-      --data-raw '{"slug":"'"$channel_name"'"}' \
+      --url "$base_url/buckets/$bucket_slug/channels" \
+      --data-raw '{"name":"'"$channel_name"'"}' \
       --header "authorization: Bearer $bearer" | jq -r '.error')
     if [ "$api_error" != null ]; then
       echo "Error creating channel: $api_error"
@@ -47,10 +47,10 @@ update_channel() {
     fi
   fi
 
-  # Update channel to point to iteration
+  # Update channel to point to version
   api_error=$(curl --request PATCH --silent \
-    --url "$base_url/images/$bucket_slug/channels/$channel_name" \
-    --data-raw '{"iteration_id":"'"$iteration_id"'"}' \
+    --url "$base_url/buckets/$bucket_slug/channels/$channel_name" \
+    --data-raw '{"version_fingerprint": "'$version_fingerprint'", "update_mask": "versionFingerprint"}' \
     --header "authorization: Bearer $bearer" | jq -r '.message')
   if [ "$api_error" != null ]; then
       echo "Error updating channel: $api_error"
