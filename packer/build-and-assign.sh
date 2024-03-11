@@ -61,7 +61,7 @@ update_channel() {
 
 # Authenticate and get bearer token for subsequent API calls
 response=$(curl --request POST --silent \
-  --url 'https://auth.hashicorp.com/oauth/token' \
+  --url 'https://auth.idp.hashicorp.com/oauth/token' \
   --data grant_type=client_credentials \
   --data client_id="$HCP_CLIENT_ID" \
   --data client_secret="$HCP_CLIENT_SECRET" \
